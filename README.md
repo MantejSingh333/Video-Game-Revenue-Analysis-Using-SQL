@@ -1,4 +1,4 @@
-# Video Game Revenue Analysis Using SQL
+# Video Game Analysis (SQL)
 
 SQL analysis identifying top-performing video games and revenue-driving titles.
 
