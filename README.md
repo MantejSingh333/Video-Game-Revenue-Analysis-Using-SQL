@@ -1,4 +1,4 @@
-# Video Game Revenue Analysis by Genre (SQL)
+# Video Game Revenue Analysis USING SQL
 
 SQL analysis identifying top-performing video game genres and revenue-driving titles.
 
