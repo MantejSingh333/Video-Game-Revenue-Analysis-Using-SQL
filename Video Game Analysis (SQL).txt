@@ -1,0 +1,92 @@
+CREATE OR REPLACE VIEW games_data AS
+SELECT game_id, Number_of_Purchases, Unit_Price, games_description.game_name, year_released, publisher, genre, number_of_reviews_from_purchased_people, number_of_english_reviews, Hours_Played, Helpful, Funny
+FROM games_revenue 
+JOIN games_description USING (game_id)
+JOIN games_reviews USING (game_id);
+
+SELECT * FROM games_data; 
+
+-- Top 5 games by total revenue: 
+SELECT game_name, Number_of_Purchases * Unit_Price AS Total_Revenue 
+FROM games_data
+ORDER BY Total_Revenue DESC 
+LIMIT 5; 
+
+-- Top 3 genres by total revenue: 
+SELECT genre, SUM(Number_of_Purchases * Unit_Price) AS Total_Revenue_For_Genre 
+FROM games_data
+GROUP BY genre 
+ORDER BY Total_Revenue_For_Genre DESC 
+LIMIT 3; 
+
+-- Year that generated the most total revenue: 
+SELECT year_released, SUM(Number_of_Purchases * Unit_Price) AS Annual_Total_Revenue 
+FROM games_data
+GROUP BY year_released 
+ORDER BY Annual_Total_Revenue DESC 
+LIMIT 1; 
+
+-- Top 5 publishers by total revenue: 
+SELECT publisher, SUM(Number_of_Purchases * Unit_Price) AS Total_Revenue_For_Publisher 
+FROM games_data
+GROUP BY publisher 
+ORDER BY Total_Revenue_For_Publisher DESC 
+LIMIT 5; 
+
+-- Percentage of customers who left reviews out of the total purchase, Percentage of reviews written in English for each game and Percentage of Helpful and Funny tags to total reviews: 
+SELECT game_name, 
+(number_of_reviews_from_purchased_people/Number_of_Purchases)*100 AS Purchase_Review_Percentage, 
+(number_of_english_reviews/number_of_reviews_from_purchased_people)*100 AS English_Review_Percentage,
+(Helpful/number_of_reviews_from_purchased_people)*100 AS Helpful_Review_Percentage, 
+(Funny/number_of_reviews_from_purchased_people)*100 AS Funny_Review_Percentage 
+FROM games_data;
+
+-- Games that have the highest and lowest percentage of Helpful tags to total reviews: 
+SELECT game_name, (Helpful/number_of_reviews_from_purchased_people)*100 AS Helpful_Review_Percentage, 'Highest' AS Pecentage_Type 
+FROM games_data
+HAVING Helpful_Review_Percentage = (SELECT MAX((Helpful/number_of_reviews_from_purchased_people)*100) FROM games_reviews) 
+UNION 
+SELECT game_name, (Helpful/number_of_reviews_from_purchased_people)*100 AS Helpful_Review_Percentage, 'Lowest' AS Pecentage_Type 
+FROM games_data
+HAVING Helpful_Review_Percentage = (SELECT MIN((Helpful/number_of_reviews_from_purchased_people)*100) FROM games_reviews); 
+
+-- Games that have the highest and lowest percentage of Funny tags to total reviews: 
+SELECT game_name, (Funny/number_of_reviews_from_purchased_people)*100 AS Funny_Review_Percentage, 'Highest' AS Pecentage_Type 
+FROM games_data
+HAVING Funny_Review_Percentage = (SELECT MAX((Funny/number_of_reviews_from_purchased_people)*100) FROM games_reviews) 
+UNION 
+SELECT game_name, (Funny/number_of_reviews_from_purchased_people)*100 AS Funny_Review_Percentage, 'Lowest' AS Pecentage_Type 
+FROM games_data
+HAVING Funny_Review_Percentage = (SELECT MIN((Funny/number_of_reviews_from_purchased_people)*100) FROM games_reviews); 
+
+-- Genre with highest and lowest percentage of Helpful tags to total reviews: 
+SELECT genre, AVG((Helpful/number_of_reviews_from_purchased_people)*100) AS Helpful_Review_Percentage, 'Highest' AS Pecentage_Type 
+FROM games_data
+WHERE (Helpful/number_of_reviews_from_purchased_people)*100 = (SELECT MAX((Helpful/number_of_reviews_from_purchased_people)*100) FROM games_reviews) 
+GROUP BY genre 
+UNION 
+SELECT genre, AVG((Helpful/number_of_reviews_from_purchased_people)*100) AS Helpful_Review_Percentage, 'Lowest' AS Pecentage_Type 
+FROM games_data
+WHERE (Helpful/number_of_reviews_from_purchased_people)*100 = (SELECT MIN((Helpful/number_of_reviews_from_purchased_people)*100) FROM games_reviews) 
+GROUP BY genre;
+
+-- Genre with highest and lowest percentage of Funny tags to total reviews: 
+SELECT genre, AVG((Funny/number_of_reviews_from_purchased_people)*100) AS Funny_Review_Percentage, 'Highest' AS Pecentage_Type 
+FROM games_data
+WHERE (Funny/number_of_reviews_from_purchased_people)*100 = (SELECT MAX((Funny/number_of_reviews_from_purchased_people)*100) FROM games_reviews) 
+GROUP BY genre 
+UNION 
+SELECT genre, AVG((Funny/number_of_reviews_from_purchased_people)*100) AS Funny_Review_Percentage, 'Lowest' AS Pecentage_Type 
+FROM games_data
+WHERE (Funny/number_of_reviews_from_purchased_people)*100 = (SELECT MIN((Funny/number_of_reviews_from_purchased_people)*100) FROM games_reviews) 
+GROUP BY genre; 
+
+-- Games ranked by their total revenue within each genre: 
+SELECT game_name, genre, Number_of_Purchases * Unit_Price AS Total_Revenue, 
+RANK() OVER(PARTITION BY genre ORDER BY Number_of_Purchases * Unit_Price DESC) AS Revenue_Rank 
+FROM games_data; 
+
+-- Games ranked by their total reviews within each genre: 
+SELECT games_description.game_name, genre, number_of_reviews_from_purchased_people, 
+RANK() OVER(PARTITION BY genre ORDER BY number_of_reviews_from_purchased_people DESC) AS Review_Rank 
+FROM games_data;
